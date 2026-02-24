@@ -1,0 +1,506 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #0a0a0a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px 20px 90px;
+    overflow: hidden;
+    gap: 120px;
+    transition: background-color 1.5s ease;
+}
+
+body.scanned-bg {
+    background-color: #f5f5f5;
+}
+
+/* ===========================
+   BACK BUTTON
+   =========================== */
+.back-btn {
+    position: absolute;
+    top: 30px;
+    left: 40px;
+    width: 44px;
+    height: 44px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 100;
+}
+
+.back-btn:hover {
+    transform: translateX(-4px);
+}
+
+/* ===========================
+   LEFT SIDE - X-Ray Demo
+   =========================== */
+.xray-demo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.xray-container {
+    position: relative;
+    width: 400px;
+    height: 400px;
+    cursor: pointer;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.xray-container .base-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+    z-index: 1;
+}
+
+.xray-container .effect-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path 1.5s cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+.xray-container.xray-scanning .effect-wrapper {
+    clip-path: inset(0 0 0% 0);
+}
+
+.xray-container .effect-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.xray-container .grain-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 1s ease 2s;
+    mix-blend-mode: overlay;
+}
+
+.xray-container.xray-scanning .grain-overlay {
+    opacity: 0.25;
+}
+
+.xray-container .xray-instruction {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 13px;
+    letter-spacing: 1px;
+    z-index: 10;
+    white-space: nowrap;
+}
+
+/* Mobile Container */
+.mobile-container {
+    width: 375px;
+    height: 812px;
+    background-color: #E8F0F5;
+    border-radius: 40px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    transform: scale(0.81);
+}
+
+/* Map Layers */
+.map-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transition: all 0.5s ease;
+}
+
+/* Standard View - Top Layer */
+.standard-view {
+    z-index: 2;
+    clip-path: inset(0 0 0 0);
+    will-change: clip-path;
+}
+
+/* Scanned View - Bottom Layer */
+.scanned-view {
+    z-index: 1;
+}
+
+.map-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Scan Beam */
+.scan-beam {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: #fff;
+    z-index: 5;
+    transform: translateY(-10px);
+    opacity: 0;
+}
+
+.scan-beam::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 230, 190, 0.2) 40%, transparent 100%);
+}
+
+.scan-beam::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 0;
+    width: 100%;
+    height: 80px;
+    background: linear-gradient(180deg, rgba(255, 240, 210, 0.15) 0%, transparent 100%);
+    filter: blur(10px);
+}
+
+/* Scanning Animation States */
+.scanning .standard-view {
+    animation: wipeMap 1.5s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+}
+
+.scanning .scan-beam {
+    opacity: 1;
+    animation: moveBeam 1.5s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+}
+
+/* Resetting Animation States */
+.resetting .standard-view {
+    animation: wipeMapReverse 0.8s ease-out forwards;
+}
+
+.resetting .scan-beam {
+    opacity: 0;
+}
+
+/* Scanned Mode UI Changes */
+/* Hide scanned content by default */
+.scanned-text,
+.scanned-icon {
+    display: none;
+}
+
+/* Show normal content by default */
+.normal-text,
+.normal-icon {
+    display: inline;
+}
+
+/* When component is scanned: hide normal, show scanned */
+.scanned .normal-text,
+.scanned .normal-icon {
+    display: none;
+}
+
+.scanned .scanned-text,
+.scanned .scanned-icon {
+    display: inline;
+}
+
+/* Layer button color change when scanned */
+.layer-button.scanned {
+    background: #1B4F82;
+    transition: background 0.3s ease;
+}
+
+.layer-button.scanned svg path {
+    stroke: #fff;
+    transition: stroke 0.3s ease;
+}
+
+/* Location button color swap when scanned */
+.location-button.scanned {
+    background: #fff;
+    transition: background 0.3s ease;
+}
+
+.location-button.scanned svg path {
+    fill: #1B4F82;
+    transition: fill 0.3s ease;
+}
+
+/* Keyframe Animations */
+@keyframes wipeMap {
+    0% {
+        clip-path: inset(0 0 0 0);
+    }
+
+    100% {
+        clip-path: inset(100% 0 0 0);
+    }
+}
+
+@keyframes wipeMapReverse {
+    0% {
+        clip-path: inset(100% 0 0 0);
+    }
+
+    100% {
+        clip-path: inset(0 0 0 0);
+    }
+}
+
+@keyframes moveBeam {
+    0% {
+        transform: translateY(0);
+    }
+
+    100% {
+        transform: translateY(820px);
+    }
+}
+
+/* Status Bar */
+.status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 24px;
+    position: relative;
+    z-index: 10;
+}
+
+.time {
+    font-size: 15px;
+    font-weight: 600;
+    color: #000;
+}
+
+.status-icons {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.battery {
+    display: flex;
+    align-items: center;
+}
+
+.battery-body {
+    width: 22px;
+    height: 11px;
+    border: 1px solid #000;
+    border-radius: 3px;
+    padding: 1px;
+}
+
+.battery-level {
+    width: 100%;
+    height: 100%;
+    background: #000;
+    border-radius: 1px;
+}
+
+.battery-cap {
+    width: 2px;
+    height: 5px;
+    background: #000;
+    border-radius: 0 1px 1px 0;
+    margin-left: 1px;
+}
+
+/* Search Container */
+.search-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 8px 8px 8px;
+    margin: 18px 16px 0 16px;
+    position: relative;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 28px;
+}
+
+.search-bar {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 24px;
+    padding: 11px 14px;
+    gap: 10px;
+}
+
+.search-icon {
+    flex-shrink: 0;
+}
+
+.search-placeholder {
+    flex: 1;
+    font-size: 17px;
+    color: rgba(60, 60, 67, 0.6);
+    letter-spacing: -0.4px;
+}
+
+.mic-icon {
+    flex-shrink: 0;
+}
+
+.profile-button {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #FFB8B8 0%, #F4A0A0 40%, #E08888 100%);
+    flex-shrink: 0;
+}
+
+/* Category Container */
+.category-container {
+    display: flex;
+    gap: 12px;
+    padding: 8px 16px;
+    position: relative;
+    z-index: 10;
+}
+
+.category-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1C1C1E;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    position: relative;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.45);
+}
+
+.category-chip:active {
+    opacity: 0.7;
+}
+
+.category-chip svg {
+    flex-shrink: 0;
+}
+
+/* Layer Button */
+.layer-button {
+    position: absolute;
+    right: 16px;
+    bottom: 120px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.layer-button:active {
+    opacity: 0.8;
+}
+
+/* Location Button */
+.location-button {
+    position: absolute;
+    right: 16px;
+    bottom: 50px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #1B4F82;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.location-button:active {
+    opacity: 0.9;
+}
+
+.location-button svg {
+    transform: rotate(45deg);
+    margin-left: 1px;
+    margin-bottom: 1px;
+}
+
+/* Home Indicator */
+.home-indicator {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 134px;
+    height: 5px;
+    background: #1C1C1E;
+    border-radius: 100px;
+    z-index: 200;
+}
+
+/* Responsive */
+@media (max-width: 400px) {
+    body {
+        padding: 0;
+    }
+
+    .mobile-container {
+        width: 100%;
+        height: 100vh;
+        border-radius: 0;
+    }
+}

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map App</title>
+    <link rel="stylesheet" href="map.css">
+    <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+</head>
+
+<body>
+
+    <!-- ========== BACK BUTTON ========== -->
+    <a href="../index.html#wrap-scan" class="back-btn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+    </a>
+
+    <!-- ========== LEFT: X-Ray Demo ========== -->
+    <div class="xray-demo">
+        <div class="xray-container" id="xrayContainer">
+            <img src="xrlay.png" alt="Base" class="base-image" id="xrayBaseImg">
+
+            <div class="effect-wrapper">
+                <canvas class="effect-canvas" id="thermalCanvas"></canvas>
+            </div>
+
+            <canvas class="grain-overlay" id="grainCanvas"></canvas>
+            <div class="xray-instruction" style="display:none;"></div>
+        </div>
+    </div>
+
+    <!-- ========== RIGHT: Mobile App ========== -->
+    <div style="display:flex; flex-direction:column; align-items:center;">
+        <div class="mobile-container">
+            <!-- Scan Beam -->
+            <div class="scan-beam"></div>
+
+            <!-- Map Background - Standard View (Top Layer) -->
+            <div class="map-layer standard-view">
+                <img src="map_bg.png" alt="Map" class="map-image">
+            </div>
+
+            <!-- Map Background - Scanned View (Bottom Layer) -->
+            <div class="map-layer scanned-view">
+                <img src="map_scan.png" alt="Scanned Map" class="map-image">
+            </div>
+            <!-- Status Bar Spacer -->
+            <div style="height: 38px; position: relative; z-index: 10;"></div>
+
+            <!-- Search Bar -->
+            <div class="search-container">
+                <div class="search-bar">
+                    <svg class="search-icon" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <circle cx="8" cy="8" r="5.5" stroke="#3C3C43" stroke-opacity="0.6" stroke-width="1.5" />
+                        <path d="M12.5 12.5L16 16" stroke="#3C3C43" stroke-opacity="0.6" stroke-width="1.5"
+                            stroke-linecap="round" />
+                    </svg>
+                    <span class="search-placeholder normal-text">지도 검색</span>
+                    <span class="search-placeholder scanned-text">안전 장소 검색</span>
+                    <svg class="mic-icon" width="12" height="18" viewBox="0 0 12 18" fill="none">
+                        <rect x="2.5" y="0.5" width="7" height="11" rx="3.5" stroke="#3C3C43" stroke-opacity="0.6" />
+                        <path d="M0.5 8C0.5 11.0376 2.96243 13.5 6 13.5C9.03757 13.5 11.5 11.0376 11.5 8"
+                            stroke="#3C3C43" stroke-opacity="0.6" stroke-linecap="round" />
+                        <path d="M6 14V17" stroke="#3C3C43" stroke-opacity="0.6" stroke-linecap="round" />
+                    </svg>
+                </div>
+                <div class="profile-button"></div>
+            </div>
+
+            <!-- Category Chips -->
+            <div class="category-container">
+                <button class="category-chip">
+                    <!-- Normal mode icon -->
+                    <svg class="chip-icon normal-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path
+                            d="M3.5 1C3.5 0.723858 3.72386 0.5 4 0.5H5C5.27614 0.5 5.5 0.723858 5.5 1V3.5C5.5 3.77614 5.27614 4 5 4H4C3.72386 4 3.5 3.77614 3.5 3.5V1Z"
+                            fill="#F5A623" />
+                        <path
+                            d="M8.5 1C8.5 0.723858 8.72386 0.5 9 0.5H10C10.2761 0.5 10.5 0.723858 10.5 1V3.5C10.5 3.77614 10.2761 4 10 4H9C8.72386 4 8.5 3.77614 8.5 3.5V1Z"
+                            fill="#F5A623" />
+                        <path
+                            d="M1 6C1 5.44772 1.44772 5 2 5H12C12.5523 5 13 5.44772 13 6V12C13 12.5523 12.5523 13 12 13H2C1.44772 13 1 12.5523 1 12V6Z"
+                            fill="#F5A623" />
+                    </svg>
+                    <!-- Scanned mode icon (AED heart) -->
+                    <svg class="chip-icon scanned-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <circle cx="7" cy="7" r="6" fill="#00A9A5" />
+                        <path d="M7 4C6.2 4 5.5 4.5 5.5 5.3C5.5 6.5 7 8 7 8C7 8 8.5 6.5 8.5 5.3C8.5 4.5 7.8 4 7 4Z"
+                            fill="#fff" />
+                        <path d="M4.5 7H5.5L6 6L7 8L8 6L8.5 7H9.5" stroke="#fff" stroke-width="0.8"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <span class="chip-text normal-text">음식점</span>
+                    <span class="chip-text scanned-text">자동심장충격기</span>
+                </button>
+                <button class="category-chip">
+                    <!-- Normal mode icon -->
+                    <svg class="chip-icon normal-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <circle cx="7" cy="8" r="5" fill="#D4883B" />
+                        <ellipse cx="7" cy="7" rx="4" ry="2.5" fill="#E8A85C" />
+                    </svg>
+                    <!-- Scanned mode icon (medical cross) -->
+                    <svg class="chip-icon scanned-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <circle cx="7" cy="7" r="6" fill="#1C1C1E" />
+                        <path d="M7 4V10M4 7H10" stroke="#fff" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                    <span class="chip-text normal-text">카페</span>
+                    <span class="chip-text scanned-text">응급의료시설</span>
+                </button>
+                <button class="category-chip">
+                    <!-- Normal mode icon -->
+                    <svg class="chip-icon normal-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <circle cx="7" cy="7" r="6" fill="#4CAF50" />
+                        <circle cx="7" cy="7" r="2.5" fill="#fff" />
+                    </svg>
+                    <!-- Scanned mode icon (safety cross) -->
+                    <svg class="chip-icon scanned-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <circle cx="7" cy="7" r="6" fill="#1C1C1E" />
+                        <path d="M7 4V10M4 7H10" stroke="#fff" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                    <span class="chip-text normal-text">가볼만한 곳</span>
+                    <span class="chip-text scanned-text">안전비상</span>
+                </button>
+                <button class="category-chip">
+                    <!-- Normal mode icon -->
+                    <svg class="chip-icon normal-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <rect x="2" y="1" width="10" height="12" rx="2" fill="#4A90D9" />
+                        <rect x="4" y="3" width="6" height="3" rx="0.5" fill="#fff" />
+                        <circle cx="7" cy="9.5" r="1.5" fill="#fff" />
+                    </svg>
+                    <!-- Scanned mode icon (cross) -->
+                    <svg class="chip-icon scanned-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <circle cx="7" cy="7" r="6" fill="#1C1C1E" />
+                        <path d="M7 4V10M4 7H10" stroke="#fff" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                    <span class="chip-text normal-text">약국</span>
+                    <span class="chip-text scanned-text">주유소</span>
+                </button>
+            </div>
+
+            <!-- Layer Button -->
+            <button class="layer-button" id="scanButton" onclick="toggleScan()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <!-- Top left corner -->
+                    <path d="M3 8V5C3 3.89543 3.89543 3 5 3H8" stroke="#1C1C1E" stroke-width="2"
+                        stroke-linecap="round" />
+                    <!-- Top right corner -->
+                    <path d="M16 3H19C20.1046 3 21 3.89543 21 5V8" stroke="#1C1C1E" stroke-width="2"
+                        stroke-linecap="round" />
+                    <!-- Bottom left corner -->
+                    <path d="M3 16V19C3 20.1046 3.89543 21 5 21H8" stroke="#1C1C1E" stroke-width="2"
+                        stroke-linecap="round" />
+                    <!-- Bottom right corner -->
+                    <path d="M16 21H19C20.1046 21 21 20.1046 21 19V16" stroke="#1C1C1E" stroke-width="2"
+                        stroke-linecap="round" />
+                    <!-- Middle horizontal line -->
+                    <path d="M3 12H21" stroke="#1C1C1E" stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </button>
+
+            <!-- Location Button -->
+            <button class="location-button">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                    <path d="M11 2L3 18L11 14L19 18L11 2Z" fill="#fff" />
+                </svg>
+            </button>
+        </div>
+        <p style="color:#888; font-size:16px; font-weight:500; letter-spacing:-0.3px; margin-top:-40px;">스캔버튼을 눌러보세요</p>
+    </div>
+    <script>
+        // ==========================================
+        // RIGHT: Map Scan Logic
+        // ==========================================
+        const container = document.querySelector('.mobile-container');
+        const searchContainer = document.querySelector('.search-container');
+        const categoryContainer = document.querySelector('.category-container');
+        const layerButton = document.querySelector('.layer-button');
+        const locationButton = document.querySelector('.location-button');
+        let isScanned = false;
+        let animationId = null;
+
+        function toggleScan() {
+            if (!isScanned) {
+                container.classList.remove('resetting');
+                container.classList.add('scanning');
+
+                // Background: black → white
+                document.body.classList.add('scanned-bg');
+
+                // Sync X-Ray scan with map scan beam
+                xrayContainer.classList.add('xray-scanning');
+                xrayIsScanning = true;
+
+                searchContainer.classList.remove('scanned');
+                categoryContainer.classList.remove('scanned');
+                layerButton.classList.remove('scanned');
+                locationButton.classList.remove('scanned');
+
+                const animationDuration = 1500;
+                const beamTravelDistance = 820;
+
+                const searchY = 110;
+                const categoryY = 175;
+                const layerButtonY = 718;
+                const locationButtonY = 788;
+
+                const searchDelay = (searchY / beamTravelDistance) * animationDuration;
+                const categoryDelay = (categoryY / beamTravelDistance) * animationDuration;
+                const layerDelay = (layerButtonY / beamTravelDistance) * animationDuration;
+                const locationDelay = (locationButtonY / beamTravelDistance) * animationDuration;
+
+                setTimeout(() => searchContainer.classList.add('scanned'), searchDelay);
+                setTimeout(() => categoryContainer.classList.add('scanned'), categoryDelay);
+                setTimeout(() => layerButton.classList.add('scanned'), layerDelay);
+                setTimeout(() => locationButton.classList.add('scanned'), locationDelay);
+
+                isScanned = true;
+            } else {
+                container.classList.remove('scanning');
+                container.classList.add('resetting');
+
+                // Background: white → black
+                document.body.classList.remove('scanned-bg');
+
+                // Reset X-Ray scan
+                xrayContainer.classList.remove('xray-scanning');
+                xrayIsScanning = false;
+
+                searchContainer.classList.remove('scanned');
+                categoryContainer.classList.remove('scanned');
+                layerButton.classList.remove('scanned');
+                locationButton.classList.remove('scanned');
+
+                isScanned = false;
+            }
+        }
+
+        // ==========================================
+        // LEFT: X-Ray Effect Logic
+        // ==========================================
+        const xrayContainer = document.getElementById('xrayContainer');
+        const xrayBaseImg = document.getElementById('xrayBaseImg');
+        const thermalCanvas = document.getElementById('thermalCanvas');
+        const grainCanvas = document.getElementById('grainCanvas');
+        const tCtx = thermalCanvas.getContext('2d');
+        const gCtx = grainCanvas.getContext('2d');
+
+        let xrayIsScanning = false;
+
+        function buildXRayLUT() {
+            const stops = [
+                { pos: 0, r: 0, g: 0, b: 5 },
+                { pos: 20, r: 8, g: 2, b: 18 },
+                { pos: 40, r: 18, g: 5, b: 40 },
+                { pos: 60, r: 15, g: 12, b: 65 },
+                { pos: 80, r: 25, g: 25, b: 95 },
+                { pos: 100, r: 40, g: 15, b: 110 },
+                { pos: 120, r: 20, g: 65, b: 145 },
+                { pos: 140, r: 30, g: 125, b: 190 },
+                { pos: 165, r: 55, g: 185, b: 215 },
+                { pos: 190, r: 100, g: 210, b: 225 },
+                { pos: 215, r: 160, g: 210, b: 230 },
+                { pos: 232, r: 200, g: 195, b: 215 },
+                { pos: 242, r: 225, g: 205, b: 210 },
+                { pos: 249, r: 240, g: 225, b: 225 },
+                { pos: 253, r: 250, g: 242, b: 240 },
+                { pos: 255, r: 255, g: 255, b: 255 },
+            ];
+
+            const lut = new Uint8Array(256 * 3);
+            for (let i = 0; i < 256; i++) {
+                let s0 = stops[0], s1 = stops[stops.length - 1];
+                for (let j = 0; j < stops.length - 1; j++) {
+                    if (i >= stops[j].pos && i <= stops[j + 1].pos) {
+                        s0 = stops[j];
+                        s1 = stops[j + 1];
+                        break;
+                    }
+                }
+                const t = (s1.pos === s0.pos) ? 0 : (i - s0.pos) / (s1.pos - s0.pos);
+                const st = t * t * (3 - 2 * t);
+                lut[i * 3] = Math.round(s0.r + (s1.r - s0.r) * st);
+                lut[i * 3 + 1] = Math.round(s0.g + (s1.g - s0.g) * st);
+                lut[i * 3 + 2] = Math.round(s0.b + (s1.b - s0.b) * st);
+            }
+            return lut;
+        }
+
+        const xrayLUT = buildXRayLUT();
+
+        function initXRayCanvas() {
+            const w = 400, h = 400;
+            thermalCanvas.width = w;
+            thermalCanvas.height = h;
+            grainCanvas.width = w;
+            grainCanvas.height = h;
+        }
+
+        function renderXRay() {
+            const w = thermalCanvas.width;
+            const h = thermalCanvas.height;
+
+            const offscreen = document.createElement('canvas');
+            offscreen.width = w;
+            offscreen.height = h;
+            const oCtx = offscreen.getContext('2d');
+            oCtx.drawImage(xrayBaseImg, 0, 0, w, h);
+            const srcData = oCtx.getImageData(0, 0, w, h).data;
+
+            const grayMap = new Float32Array(w * h);
+            for (let i = 0; i < w * h; i++) {
+                const idx = i * 4;
+                let gray = srcData[idx] * 0.299 + srcData[idx + 1] * 0.587 + srcData[idx + 2] * 0.114;
+                gray = 255 - gray;
+                let c = gray / 255;
+                c = c * c * (3 - 2 * c);
+                c = c * c * (3 - 2 * c);
+                grayMap[i] = c * 255;
+            }
+
+            const imageData = tCtx.createImageData(w, h);
+            const data = imageData.data;
+            const caOffset = 2;
+
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const i = y * w + x;
+                    const pi = i * 4;
+
+                    const gray = Math.min(255, Math.max(0, Math.round(grayMap[i])));
+
+                    const rxR = Math.max(0, Math.min(w - 1, x - caOffset));
+                    const ryR = Math.max(0, Math.min(h - 1, y - caOffset));
+                    const grayR = Math.min(255, Math.max(0, Math.round(grayMap[ryR * w + rxR])));
+
+                    const rxB = Math.max(0, Math.min(w - 1, x + caOffset));
+                    const ryB = Math.max(0, Math.min(h - 1, y + caOffset));
+                    const grayB = Math.min(255, Math.max(0, Math.round(grayMap[ryB * w + rxB])));
+
+                    data[pi] = xrayLUT[grayR * 3];
+                    data[pi + 1] = xrayLUT[gray * 3 + 1];
+                    data[pi + 2] = xrayLUT[grayB * 3 + 2];
+                    data[pi + 3] = 255;
+                }
+            }
+
+            tCtx.putImageData(imageData, 0, 0);
+
+            tCtx.globalCompositeOperation = 'screen';
+            tCtx.filter = 'blur(8px) brightness(0.3)';
+            tCtx.drawImage(thermalCanvas, 0, 0);
+            tCtx.filter = 'none';
+            tCtx.globalCompositeOperation = 'source-over';
+        }
+
+        function renderGrain() {
+            const w = grainCanvas.width;
+            const h = grainCanvas.height;
+            const imageData = gCtx.createImageData(w, h);
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                const n = Math.random() * 255;
+                data[i] = data[i + 1] = data[i + 2] = n;
+                data[i + 3] = 255;
+            }
+            gCtx.putImageData(imageData, 0, 0);
+        }
+
+
+
+        function onXRayImageReady() {
+            initXRayCanvas();
+            renderXRay();
+            renderGrain();
+        }
+
+        xrayBaseImg.onload = onXRayImageReady;
+        if (xrayBaseImg.complete) onXRayImageReady();
+
+        // X-Ray scan is now triggered by toggleScan() above
+    </script>
+</body>
+
+</html>
