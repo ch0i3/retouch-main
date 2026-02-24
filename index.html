@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Metaphor Board</title>
+    <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+    <style>
+        /* ----- Settings & Resets ----- */
+        :root {
+            --bg-color: #FAFAFA;
+            --text-color: #111;
+            --side-gutter: 8vw;
+            --cursor-size: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none;
+            /* Hide default for custom cursor */            
+        }
+
+        body {
+            font-family: Pretendard, -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple SD Gothic Neo", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.8s ease, color 0.8s ease;
+            overflow-x: hidden;
+        }
+
+        /* ----- Custom Cursor ----- */
+        .cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--cursor-size);
+            height: var(--cursor-size);
+            background-color: #fff;
+            mix-blend-mode: difference;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .cursor.magnetic-active {
+            width: 8px;
+            height: 8px;
+            background-color: transparent;
+        }
+
+        /* ----- GNB (Sticky & Hide) ----- */
+        .gnb {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 0.8vw var(--side-gutter);
+            /* Reduced side padding for tighter navigation */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            transform: translateY(0);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            mix-blend-mode: difference;
+            color: #fff;
+        }
+
+        .gnb.hidden {
+            transform: translateY(-100%);
+        }
+
+        .gnb-logo {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .gnb-menu {
+            display: flex;
+            gap: 2vw;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .magnetic-btn {
+            display: inline-block;
+            padding: 10px 15px;
+            position: relative;
+        }
+
+        /* ----- Typography System ----- */
+        .display-1 {
+            font-size: clamp(80px, 11vw, 240px);
+            font-weight: 600;
+            letter-spacing: -0.04em;
+            line-height: 0.9;
+        }
+
+        .text-body-large {
+            font-size: 20px;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            line-height: 1.5;
+            color: inherit;
+            word-break: keep-all;
+        }
+
+        .text-body {
+            font-size: clamp(16px, 1.4vw, 24px);
+            font-weight: 400;
+            line-height: 1.6;
+            color: inherit;
+            opacity: 0.8;
+            word-break: keep-all;
+        }
+
+        /* Typewriter Effect */
+        .typewriter {
+            display: inline-block;
+            border-right: 2px solid transparent;
+            white-space: nowrap;
+            vertical-align: bottom;
+            min-height: 1.5em;
+        }
+
+        .typewriter.typing-active {
+            border-right-color: var(--text-color);
+            animation: blink-caret .75s step-end infinite;
+        }
+
+        .typewriter.typing-done {
+            border-right-color: transparent;
+            animation: none;
+        }
+
+        @keyframes blink-caret {
+
+            from,
+            to {
+                border-color: transparent
+            }
+
+            50% {
+                border-color: var(--text-color);
+            }
+        }
+
+        /* Staggered Text Masking */
+        .line-mask {
+            display: block;
+            overflow: hidden;
+            will-change: transform;
+        }
+
+        .line-content {
+            display: block;
+            transform: translateY(110%);
+            opacity: 0;
+            transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .in-view .line-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* ----- Hero Section ----- */
+        .hero-section {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 8vw var(--side-gutter);
+            /* Increased side padding */
+            position: relative;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .hero-desc {
+            max-width: 60vw;
+            margin-top: 6vh;
+            margin-bottom: 8vh;
+            align-self: flex-start;
+            /* removed manual nudge so left aligns with gnb-logo */
+            /* Small nudge right to match Re:touch text */
+            text-align: left;
+            /* Align with the H in RE:TOUCH */
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 40px;
+            left: 8vw;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.5;
+        }
+
+        /* ----- Background Section (Sequential Storytelling) ----- */
+        .background-section {
+            min-height: 150vh;
+            /* Storytelling duration */
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            position: relative;
+            z-index: 2;
+        }
+
+        .bg-sticky-wrap {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 8vw;
+        }
+
+        .bg-statement {
+            font-size: clamp(32px, 4vw, 80px);
+            font-weight: 500;
+            letter-spacing: -0.03em;
+            line-height: 1.2;
+            word-break: keep-all;
+            text-align: center;
+            will-change: transform, opacity;
+            margin-bottom: 4vw;
+            /* Space between title and description */
+        }
+
+        .bg-text {
+            max-width: 50vw;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            will-change: transform, opacity;
+        }
+
+        .bg-text .text-body {
+            /* Keep it a normal body size, not overly large */
+            font-size: clamp(16px, 1.4vw, 24px);
+            line-height: 1.6;
+        }
+
+        /* ----- Horizontal Scroll Section ----- */
+        .horizontal-section {
+            height: 300vh;
+            /* Faster scroll through cards as requested */
+            width: 100%;
+            position: relative;
+            z-index: 3;
+            margin-top: -100vh;
+            margin-bottom: 25vh;
+            /* background left TRANSPARENT so previous text isn't physically covered */
+        }
+
+        .hs-sticky-wrap {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            padding-left: 8vw;
+        }
+
+        .hs-track {
+            display: flex;
+            gap: 4vw;
+            width: max-content;
+            will-change: transform;
+            padding-right: 8vw;
+            margin-top: -5vh;
+            /* Move cards up slightly */
+            /* Ensure initial state is off-screen to the right and enable smooth entry */
+            transform: translateX(100vw);
+            /* Transition removed: transform is driven per-frame by JS for precise scroll control */
+        }
+
+        .hs-card {
+            width: 40vw;
+            height: 60vh;
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: #222;
+        }
+
+        .hs-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            filter: brightness(0.7);
+            transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), filter 0.8s ease;
+        }
+
+        .hs-card:hover img {
+            transform: scale(1.05);
+            filter: brightness(0.5);
+        }
+
+        .hs-card-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 4vw;
+            color: #fff;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
+        }
+
+        .hs-card-num {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+            opacity: 0.8;
+        }
+
+        .hs-card-title {
+            font-size: clamp(28px, 3vw, 40px);
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .hs-card-desc {
+            font-size: 16px;
+            line-height: 1.6;
+            opacity: 0.8;
+            word-break: keep-all;
+        }
+
+        /* ----- Metaphor Modules (Sticky Pinning) ----- */
+        .metaphors-container {
+            padding: 10vw 8vw 10vw 8vw;
+            /* Adjusted padding for better section separation */
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .metaphor-module {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            height: 150vh;
+            /* Long scroll area to pin text */
+            position: relative;
+            text-decoration: none;
+            color: inherit;
+            margin-bottom: 10vh;
+            column-gap: 10vw; /* 글은 고정하고 메타포(visual)만 더 멀어지도록 수평 간격 확장 */
+        }
+
+        .metaphor-module:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        .module-text {
+            width: 40%;
+            position: sticky;
+            top: 25vh;
+            /* Stops higher on the screen */
+            display: flex;
+            flex-direction: column;
+            gap: 2vw;
+        }
+
+        .module-visual {
+            width: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow: hidden;
+        }
+
+        .module-title {
+            font-size: clamp(60px, 8vw, 160px);
+            font-weight: 500;
+            letter-spacing: -0.04em;
+            line-height: 0.9;
+            text-transform: capitalize;
+            margin-bottom: 2vw;
+            /* Increased gap beneath title */
+        }
+
+        .module-desc {
+            max-width: 35vw;
+        }
+
+        /* CTA Button */
+        .cta-btn {
+            margin-top: 2vw;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 16px 24px;
+            border: 1px solid #0b0b0b;
+            border-radius: 40px;
+            position: relative;
+            overflow: hidden;
+            transition: color 0.4s ease;
+            width: fit-content;
+            color: #0b0b0b;
+            /* Ensure button doesn't stretch too wide */
+        }
+
+        .cta-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--text-color);
+            /* Always black in light mode, white in dark mode */
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: -1;
+        }
+
+        /* Important to explicitly set the hover color */
+        .cta-btn:hover {
+            color: var(--bg-color) !important;
+        }
+
+        .cta-btn:hover::before {
+            transform: scaleX(1);
+        }
+
+        .cta-arrow {
+            transition: transform 0.3s ease;
+        }
+
+        .cta-btn:hover .cta-arrow {
+            transform: translateX(6px);
+        }
+
+        .demo-box {
+            width: 600px;
+            height: 600px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background-color: transparent;
+            transform: scale(0.6);
+            will-change: transform;
+        }
+
+        .scene-fold {
+            transform: scale(1.5);
+            perspective: 1200px;
+            width: 160px;
+            height: 160px;
+            position: relative;
+            background: transparent;
+        }
+
+        .xray-container {
+            transform: scale(1.5);
+            width: 180px;
+            height: 180px;
+            position: relative;
+            background: #000;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        .particle-container {
+            transform: scale(1.5);
+            width: 200px;
+            height: 200px;
+            position: relative;
+            background-color: transparent;
+        }
+
+        .demo-seal-wrapper {
+            transform: scale(1.5);
+            position: relative;
+            width: 160px;
+            height: 160px;
+            background: #DADFE3;
+            border-radius: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .metaphor-module {
+                flex-direction: column;
+                height: auto;
+                gap: 15vw;
+                padding-bottom: 20vw;
+            }
+
+            .metaphor-module:nth-child(even) {
+                flex-direction: column;
+            }
+
+            .module-text {
+                width: 100%;
+                position: relative;
+                top: 0;
+            }
+
+            .module-visual {
+                width: 100%;
+                height: 80vw;
+                position: relative;
+            }
+
+            .demo-box {
+                width: 300px;
+                height: 300px;
+            }
+
+            .hero-desc {
+                max-width: 90vw;
+                margin-left: 0;
+            }
+        }
+
+        /* ----- 01 Fold ----- */
+        .scene-fold {
+            perspective: 1200px;
+            width: 160px;
+            height: 160px;
+            position: relative;
+            background: transparent;
+        }
+
+        .paper-panel {
+            width: 160px;
+            height: 53.33px;
+            background-color: #f0f2f5;
+            position: absolute;
+            left: 0;
+            transform-style: preserve-3d;
+            backface-visibility: visible;
+        }
+
+        .top-panel {
+            top: 0;
+            z-index: 10;
+            background: #f0f2f5;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            /* Original shadow */
+        }
+
+        .middle-panel {
+            top: 100%;
+            transform-origin: top center;
+            z-index: 5;
+            background-color: #e4e7eb;
+        }
+
+        .bottom-panel {
+            top: 100%;
+            transform-origin: top center;
+            z-index: 1;
+            background-color: #f0f2f5;
+        }
+
+        .crease-shadow {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        /* ----- 02 Scan ----- */
+        .xray-container {
+            width: 180px;
+            height: 180px;
+            position: relative;
+            background: #000;
+            overflow: hidden;
+            border-radius: 8px;
+            /* Based on original */
+        }
+
+        .base-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .effect-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            clip-path: inset(0 0 100% 0);
+        }
+
+        .effect-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .grain-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            mix-blend-mode: overlay;
+            /* Original blend mode */
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* ----- 03 Remove ----- */
+        .particle-container {
+            width: 200px;
+            height: 200px;
+            position: relative;
+            background-color: transparent;
+        }
+
+        .particle-container canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ----- 04 Reveal ----- */
+        .demo-seal-wrapper {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            background: #DADFE3;
+            border-radius: 12px;
+        }
+
+        .demo-seal {
+            position: absolute;
+            inset: 0;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #EBEDF1 calc(100% - 24px), transparent calc(100% - 24px));
+            transform-origin: right center;
+            box-shadow: 2px 3px 12px rgba(0, 0, 0, 0.08);
+            clip-path: inset(0 0 0 0);
+            z-index: 2;
+        }
+
+        .demo-seal::before {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            border: 1.5px dashed rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 24px), calc(100% - 24px) 100%, 0 100%);
+        }
+
+        .demo-seal-corner {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 33.94px;
+            height: 33.94px;
+            /* 24px * sqrt(2) */
+            background: linear-gradient(135deg, #F5F6F7 50%, transparent 50%);
+            filter: drop-shadow(-2px -2px 4px rgba(0, 0, 0, 0.1));
+            z-index: 3;
+        }
+
+        .demo-curl-shadow {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 30px;
+            background: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.1) 40%, rgba(255, 255, 255, 0.9) 60%, #EBEDF1 100%);
+            opacity: 0;
+            box-shadow: -4px 0 8px rgba(0, 0, 0, 0.15);
+            border-radius: 12px 0 0 12px;
+            left: 100%;
+            z-index: 3;
+        }
+
+        /* ----- Footer ----- */
+        .footer {
+            width: 100%;
+            padding: 5vw var(--side-gutter) 2vw var(--side-gutter);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            font-family: inherit;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .footer {
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+            }
+        }
+
+        .footer-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 11vw;
+            flex-wrap: wrap;
+            gap: 4vw;
+        }
+
+        .footer-cta {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .footer-cta-light {
+            font-size: clamp(32px, 4vw, 56px);
+            font-weight: 500;
+            color: rgba(0, 0, 0, 0.3);
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            margin-bottom: 0.2em;
+        }
+
+        .footer-cta-bold {
+            font-size: clamp(32px, 4vw, 56px);
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+        }
+
+        .footer-links-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            /* Pushes column contents to the right */
+            gap: 2vw;
+            font-size: 16px;
+            font-weight: 500;
+            min-width: 300px;
+            padding-right: 4vw;
+            /* Slightly pull away from the right edge */
+        }
+
+        .footer-col {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: flex-end;
+            /* Align texts to the right edge */
+            text-align: right;
+        }
+
+        .footer-link {
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+            width: fit-content;
+        }
+
+        .footer-link::after {
+            content: '';
+            position: absolute;
+            width: 0%;
+            height: 1px;
+            bottom: -2px;
+            left: 0;
+            background-color: currentColor;
+            transition: width 0.3s ease;
+        }
+
+        .footer-link:hover::after {
+            width: 100%;
+        }
+
+        .footer-contact-row {
+            display: flex;
+            gap: 1.5vw;
+        }
+
+        .footer-contact-label {
+            font-weight: 400;
+            width: 20px;
+        }
+
+        .footer-contact-val {
+            line-height: 1.5;
+        }
+
+        .footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 2vw;
+            font-size: 14px;
+            font-weight: 500;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .footer-newsletter {
+            display: flex;
+            align-items: center;
+            gap: 4vw;
+        }
+
+        .footer-input-wrap {
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--text-color);
+            padding-bottom: 4px;
+        }
+
+        .footer-input-wrap input {
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 14px;
+            color: inherit;
+            outline: none;
+            width: 150px;
+        }
+
+        .footer-input-wrap input::placeholder {
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        .footer-input-wrap button {
+            background: transparent;
+            border: none;
+            color: inherit;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .footer-back-top {
+            color: rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: color 0.3s ease;
+            text-transform: none;
+        }
+
+        .footer-back-top:hover {
+            color: var(--text-color);
+        }
+
+        .footer-socials a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .footer-socials a:hover {
+            text-decoration: underline;
+        }
+
+        /* Dark mode overrides for footer elements that need it */
+        .dark-mode .footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dark-mode .footer-cta-light {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .dark-mode .footer-input-wrap input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .dark-mode .footer-back-top {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .dark-mode .footer-back-top:hover {
+            color: #fff;
+        }
+
+        @media (max-width: 768px) {
+            .footer-links-grid {
+                grid-template-columns: 1fr;
+                gap: 8vw;
+            }
+
+            .footer-newsletter {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 2vw;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="cursor"></div>
+
+    <nav class="gnb" id="gnb">
+        <div class="gnb-logo magnetic-btn" onclick="document.body.scrollIntoView({behavior:'smooth'})">RE:TOUCH</div>
+        <div class="gnb-menu">
+            <div class="magnetic-btn"
+                onclick="document.getElementById('darkSection').scrollIntoView({behavior:'smooth'})">Process</div>
+            <div class="magnetic-btn"
+                onclick="document.getElementById('wrap-fold').scrollIntoView({behavior:'smooth'})">Work</div>
+            <div class="magnetic-btn" onclick="document.querySelector('.footer').scrollIntoView({behavior:'smooth'})">
+                Studio</div>
+        </div>
+    </nav>
+
+    <section class="hero-section observer-target">
+        <h1 class="display-1" style="width: 100%; text-align: left;">
+            <span class="line-mask" style="display:inline-block; width:100%;"><span
+                    class="line-content">RE:TOUCH</span></span>
+        </h1>
+        <div class="hero-desc">
+            <p class="text-body-large">
+                <span class="typewriter" id="type-line-1">지금의 모바일 UI는 버튼을 누르면 즉시 결과가 바뀌는</span><br />
+                <span class="typewriter" id="type-line-2">단절된 경험을 제공해왔습니다.</span>
+            </p>
+            <p class="text-body-large" style="margin-top:2vw;">
+                <span class="typewriter" id="type-line-3">이 프로젝트는 현실의 물리적 행동을 UI 제스처에 적용하여,</span><br />
+                <span class="typewriter" id="type-line-4">사용자가 실재감을 느끼게 하는 것을 목표로 합니다.</span>
+            </p>
+        </div>
+        </div>
+    </section>
+
+    <section class="background-section observer-target dark-trigger" id="darkSection">
+        <div class="bg-sticky-wrap" style="flex-direction: column;">
+            <h2 class="bg-statement">
+                <span class="line-mask"><span class="line-content">현실의 재미를 디지털 UI에서도</span></span>
+                <span class="line-mask"><span class="line-content" style="transition-delay: 0.1s;">경험한다면
+                        어떨까?</span></span>
+            </h2>
+            <div class="bg-text">
+                <p class="text-body">
+                    현실에서 도구를 다룰 때 우리는 결과보다 과정의 감각을 먼저 경험한다.<br />
+                    눌림, 저항, 압축, 분리 같은 작은 물리적 변화들이 행동의 즐거움을 만든다.
+                </p>
+                <p class="text-body" style="margin-top:1.5vw;">
+                    그렇다면, 모바일 UI에서도 이런 감각을 간접적으로 경험할 수 있다면 어떨까?<br />
+                    이 프로젝트는 화면 터치라는 행위에 물리적 감각을 덧입혀보는 실험이다.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- HORIZONTAL SCROLL SECTION -->
+    <section class="horizontal-section observer-target dark-trigger" id="horizontalSection">
+        <div class="hs-sticky-wrap">
+            <div class="hs-track" id="hsTrack">
+                <div class="hs-card">
+                    <img src="./1.png" alt="UI 동사">
+                    <div class="hs-card-content">
+                        <div class="hs-card-num">01</div>
+                        <div class="hs-card-title">UI 동사</div>
+                        <div class="hs-card-desc">디지털 화면 안에서 사용자가 수행하는 행동의 목적으로 무엇을 하게 할 것인가를 정의한다</div>
+                    </div>
+                </div>
+                <div class="hs-card">
+                    <img src="./2.png" alt="메타포">
+                    <div class="hs-card-content">
+                        <div class="hs-card-num">02</div>
+                        <div class="hs-card-title">메타포</div>
+                        <div class="hs-card-desc">UI 동사와의 작동 방식 유사성을 기준으로 동일한 결과를 만들어내는 현실 도구를 선정한다</div>
+                    </div>
+                </div>
+                <div class="hs-card">
+                    <img src="./3.png" alt="행동원리">
+                    <div class="hs-card-content">
+                        <div class="hs-card-num">03</div>
+                        <div class="hs-card-title">행동원리</div>
+                        <div class="hs-card-desc">도구가 결과를 만들어내는 물리적 규칙을 UI동사에 적용하여 사용자가 예측 가능하게 한다</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="metaphors-container">
+
+        <!-- 01 Fold -->
+        <div class="metaphor-module observer-target" id="wrap-fold">
+            <div class="module-text">
+                <div class="module-title"><span class="line-mask"><span class="line-content">Fold</span></span></div>
+                <div class="module-desc">
+                    <p class="text-body">종이는 접으면 면적이 줄어들고, 핵심만 겉으로 드러나며 나머지는 안쪽에 겹쳐 저장된다.</p>
+                    <p class="text-body" style="margin-top:1.5vw;">Fold 라는 UI 동사를 종이를 접는 행동 원리 메타포로 표현해, 사용자가 글의 핵심과 맥락을
+                        동시에 이해하도록 돕는다.</p>
+                </div>
+                <a href="./paper/article.html" class="cta-btn magnetic-btn" style="text-decoration: none;">
+                    Experience Fold <span class="cta-arrow">➔</span>
+                </a>
+            </div>
+            <div class="module-visual">
+                <div class="demo-box">
+                    <div class="scene-fold">
+                        <div class="paper-panel top-panel">
+                            <div class="crease-shadow"
+                                style="background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 30%);">
+                            </div>
+                            <div class="paper-panel middle-panel">
+                                <div class="crease-shadow"
+                                    style="background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.2) 100%);">
+                                </div>
+                                <div class="paper-panel bottom-panel">
+                                    <div class="crease-shadow"
+                                        style="background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 30%);">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 02 Scan -->
+        <div class="metaphor-module observer-target" id="wrap-scan">
+            <div class="module-text">
+                <div class="module-title"><span class="line-mask"><span class="line-content">Scan</span></span></div>
+                <div class="module-desc">
+                    <p class="text-body">엑스레이는 표면을 투과해 내부 구조를 스캔함으로써, 겉으로는 보이지 않던 정보를 레이어로 드러낸다.</p>
+                    <p class="text-body" style="margin-top:1.5vw;">Scan 이라는 UI 동사를 엑스레이 스캔이라는 행동 원리 메타포로 표현해, 사용자가 보이지
+                        않던 도시의 위험 요소를 직관적으로 인지하도록 돕는다.</p>
+                </div>
+                <a href="./map/map.html" class="cta-btn magnetic-btn" style="text-decoration: none;">
+                    Experience Scan <span class="cta-arrow">➔</span>
+                </a>
+            </div>
+            <div class="module-visual">
+                <div class="demo-box">
+                    <div class="xray-container">
+                        <img src="./map/xrlay.png" alt="Base" class="base-image" id="xrayBaseImg">
+                        <div class="effect-wrapper">
+                            <canvas class="effect-canvas" id="thermalCanvas"></canvas>
+                        </div>
+                        <canvas class="grain-overlay" id="grainCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 03 Remove -->
+        <div class="metaphor-module observer-target" id="wrap-remove">
+            <div class="module-text">
+                <div class="module-title"><span class="line-mask"><span class="line-content">Remove</span></span></div>
+                <div class="module-desc">
+                    <p class="text-body">증발은 한순간에 사라지는 게 아니라, 점진적으로 존재감이 옅어지며 소멸한다.</p>
+                    <p class="text-body" style="margin-top:1.5vw;">Remove 라는 UI 동사를 증발하는 행동 원리 메타포로 표현해, 사용자가 삭제를 부담 없이
+                        이해하고 실행하도록 돕는다.</p>
+                </div>
+                <a href="./remove/mail.html" class="cta-btn magnetic-btn" style="text-decoration: none;">
+                    Experience Remove <span class="cta-arrow">➔</span>
+                </a>
+            </div>
+            <div class="module-visual">
+                <div class="demo-box">
+                    <div class="particle-container">
+                        <canvas id="particleCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 04 Reveal -->
+        <div class="metaphor-module observer-target" id="wrap-reveal">
+            <div class="module-text">
+                <div class="module-title"><span class="line-mask"><span class="line-content">Reveal</span></span></div>
+                <div class="module-desc">
+                    <p class="text-body">이중라벨은 표면을 덮어 숨기지만, 모서리를 잡아 떼면 층이 분리되며 아래 내용이 점진적으로 드러난다.</p>
+                    <p class="text-body" style="margin-top:1.5vw;">Reveal이라는 UI 동사를 이중라벨을 떼는 행동 원리 메타포로 표현해, 사용자가 날짜의
+                        앞면(일정)과 뒷면(기록·사진)을 직관적으로 보도록 돕는다.</p>
+                </div>
+                <a href="./sticker/sticker.html" class="cta-btn magnetic-btn" style="text-decoration: none;">
+                    Experience Reveal <span class="cta-arrow">➔</span>
+                </a>
+            </div>
+            <div class="module-visual">
+                <div class="demo-box">
+                    <div class="demo-seal-wrapper">
+                        <div class="demo-seal" id="demoSeal">
+                            <div class="demo-seal-corner" id="demoCorner"></div>
+                        </div>
+                        <div class="demo-curl-shadow" id="demoShadow"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer class="footer">
+        <div class="footer-top">
+            <div class="footer-cta">
+                <div class="footer-cta-light" style="margin-bottom: 24px;">Bridging the gap between pixels and</div>
+                <div class="footer-cta-bold">PHYSICAL TOUCH</div>
+            </div>
+            <div class="footer-links-grid">
+                <div class="footer-col" style="grid-column: 1;"></div>
+                <div class="footer-col" style="grid-column: 2; align-items: flex-end;">
+                    <a href="#" class="footer-link"
+                        onclick="window.scrollTo({top:0, behavior:'smooth'}); return false;">Home</a>
+                    <a href="#wrap-fold" class="footer-link">Work</a>
+                    <a href="#darkSection" class="footer-link">Process</a>
+                    <a href="#" class="footer-link"
+                        onclick="document.querySelector('.footer').scrollIntoView({behavior:'smooth'}); return false;">Studio</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom" style="justify-content: center; padding-top: 2vw;">
+            <div style="opacity: 0.4;">&copy; 2026 Choi Seoyeon. All rights reserved.</div>
+        </div>
+    </footer>
+
+    <script>
+        // ==========================================
+        // 02 Scan Logic
+        // ==========================================
+        const thermalCanvas = document.getElementById('thermalCanvas');
+        const grainCanvas = document.getElementById('grainCanvas');
+        const tCtx = thermalCanvas.getContext('2d', { willReadFrequently: true });
+        const gCtx = grainCanvas.getContext('2d', { willReadFrequently: true });
+        const xrayBaseImg = document.getElementById('xrayBaseImg');
+
+        function buildXRayLUT() {
+            const stops = [
+                { pos: 0, r: 0, g: 0, b: 5 }, { pos: 20, r: 8, g: 2, b: 18 }, { pos: 40, r: 18, g: 5, b: 40 },
+                { pos: 60, r: 15, g: 12, b: 65 }, { pos: 80, r: 25, g: 25, b: 95 }, { pos: 100, r: 40, g: 15, b: 110 },
+                { pos: 120, r: 20, g: 65, b: 145 }, { pos: 140, r: 30, g: 125, b: 190 }, { pos: 165, r: 55, g: 185, b: 215 },
+                { pos: 190, r: 100, g: 210, b: 225 }, { pos: 215, r: 160, g: 210, b: 230 }, { pos: 232, r: 200, g: 195, b: 215 },
+                { pos: 242, r: 225, g: 205, b: 210 }, { pos: 249, r: 240, g: 225, b: 225 }, { pos: 253, r: 250, g: 242, b: 240 },
+                { pos: 255, g: 255, b: 255 }
+            ];
+            const lut = new Uint8Array(256 * 3);
+            for (let i = 0; i < 256; i++) {
+                let s0 = stops[0], s1 = stops[stops.length - 1];
+                for (let j = 0; j < stops.length - 1; j++) {
+                    if (i >= stops[j].pos && i <= stops[j + 1].pos) { s0 = stops[j]; s1 = stops[j + 1]; break; }
+                }
+                const t = (s1.pos === s0.pos) ? 0 : (i - s0.pos) / (s1.pos - s0.pos);
+                const st = t * t * (3 - 2 * t);
+                lut[i * 3] = Math.round(s0.r + (s1.r - s0.r) * st);
+                lut[i * 3 + 1] = Math.round(s0.g + (s1.g - s0.g) * st);
+                lut[i * 3 + 2] = Math.round(s0.b + (s1.b - s0.b) * st);
+            }
+            return lut;
+        }
+        const xrayLUT = buildXRayLUT();
+
+        function initXRayCanvas() {
+            thermalCanvas.width = 180; thermalCanvas.height = 180;
+            grainCanvas.width = 180; grainCanvas.height = 180;
+        }
+
+        function renderXRay() {
+            const w = 180, h = 180;
+            const offscreen = document.createElement('canvas');
+            offscreen.width = w; offscreen.height = h;
+            const oCtx = offscreen.getContext('2d');
+            oCtx.drawImage(xrayBaseImg, 0, 0, w, h);
+
+            // Handle rendering if image loaded
+            if (offscreen.width > 0) {
+                const srcData = oCtx.getImageData(0, 0, w, h).data;
+                const grayMap = new Float32Array(w * h);
+                for (let i = 0; i < w * h; i++) {
+                    const idx = i * 4;
+                    let gray = srcData[idx] * 0.299 + srcData[idx + 1] * 0.587 + srcData[idx + 2] * 0.114;
+                    gray = 255 - gray;
+                    let c = gray / 255;
+                    c = c * c * (3 - 2 * c);
+                    c = c * c * (3 - 2 * c);
+                    grayMap[i] = c * 255;
+                }
+                const imageData = tCtx.createImageData(w, h);
+                const data = imageData.data;
+                const caOffset = 2;
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const i = y * w + x; const pi = i * 4;
+                        const gray = Math.min(255, Math.max(0, Math.round(grayMap[i])));
+                        const rxR = Math.max(0, Math.min(w - 1, x - caOffset));
+                        const ryR = Math.max(0, Math.min(h - 1, y - caOffset));
+                        const grayR = Math.min(255, Math.max(0, Math.round(grayMap[ryR * w + rxR])));
+                        const rxB = Math.max(0, Math.min(w - 1, x + caOffset));
+                        const ryB = Math.max(0, Math.min(h - 1, y + caOffset));
+                        const grayB = Math.min(255, Math.max(0, Math.round(grayMap[ryB * w + rxB])));
+                        data[pi] = xrayLUT[grayR * 3];
+                        data[pi + 1] = xrayLUT[gray * 3 + 1];
+                        data[pi + 2] = xrayLUT[grayB * 3 + 2];
+                        data[pi + 3] = 255;
+                    }
+                }
+                tCtx.putImageData(imageData, 0, 0);
+
+                tCtx.globalCompositeOperation = 'screen';
+                tCtx.filter = 'blur(8px) brightness(0.3)';
+                tCtx.drawImage(thermalCanvas, 0, 0);
+                tCtx.filter = 'none';
+                tCtx.globalCompositeOperation = 'source-over';
+            }
+        }
+
+        function renderGrain() {
+            const w = 180, h = 180;
+            const imageData = gCtx.createImageData(w, h);
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                const n = Math.random() * 255;
+                data[i] = data[i + 1] = data[i + 2] = n; data[i + 3] = 255;
+            }
+            gCtx.putImageData(imageData, 0, 0);
+        }
+
+        xrayBaseImg.onload = () => { initXRayCanvas(); renderXRay(); renderGrain(); };
+        if (xrayBaseImg.complete && xrayBaseImg.naturalWidth > 0) {
+            initXRayCanvas(); renderXRay(); renderGrain();
+        }
+
+
+        // ==========================================
+        // 03 Remove Logic (Particle)
+        // ==========================================
+        const pCanvas = document.getElementById('particleCanvas');
+        const pCtx = pCanvas.getContext('2d');
+        let pWidth = 200, pHeight = 200;
+        pCanvas.width = pWidth; pCanvas.height = pHeight;
+
+        let particles = [];
+        let particleProgress = 0;
+        const PARTICLE_COUNT = 8000;
+        const CIRCLE_RADIUS = 70;
+        const PALETTE = [{ r: 60, g: 60, b: 60 }, { r: 20, g: 20, b: 20 }, { r: 80, g: 80, b: 80 }];
+
+        function lerpColor(c1, c2, factor) {
+            return {
+                r: Math.floor(c1.r + (c2.r - c1.r) * factor),
+                g: Math.floor(c1.g + (c2.g - c1.g) * factor),
+                b: Math.floor(c1.b + (c2.b - c1.b) * factor)
+            };
+        }
+
+        class Particle {
+            constructor(x, y, colorStr, cx, cy) {
+                this.originX = x; this.originY = y;
+                this.simX = x; this.simY = y;
+                this.vx = 0; this.vy = 0;
+                this.simAlpha = 1; this.simSize = 1;
+                this.size = Math.random() * 1.5 + 1;
+                this.colorStr = colorStr;
+                this.noiseSeedX = Math.random() * 100;
+                this.swayAmount = 1.5 + Math.random() * 2.5;
+                this.baseAngle = Math.atan2(y - cy, x - cx);
+            }
+            update(time) {
+                this.vx += Math.cos(this.baseAngle) * 0.15;
+                this.vy += Math.sin(this.baseAngle) * 0.15;
+                const noiseAngle = Math.sin(this.simX * 0.01 + time) * Math.cos(this.simY * 0.01 - time) * Math.PI * 2;
+                this.vx += Math.cos(noiseAngle) * 0.25;
+                this.vy += Math.sin(noiseAngle) * 0.25;
+                this.vy -= 0.05;
+                const sway = Math.sin(time * 0.8 + this.noiseSeedX) * this.swayAmount;
+                this.vx += sway * 0.006;
+                this.vx *= 0.94; this.vy *= 0.94;
+                this.simX += this.vx; this.simY += this.vy;
+                if (this.simAlpha > 0) this.simAlpha -= 0.008;
+                if (this.simSize > 0) this.simSize -= 0.004;
+            }
+            draw(progress) {
+                const x = this.originX + (this.simX - this.originX) * progress;
+                const y = this.originY + (this.simY - this.originY) * progress;
+                const alpha = 1 - (1 - Math.max(0, this.simAlpha)) * progress;
+                const sizeMult = 1 - (1 - Math.max(0, this.simSize)) * progress;
+                if (alpha < 0.01 || sizeMult < 0.01) return;
+                pCtx.fillStyle = this.colorStr.replace(')', `, ${alpha})`);
+                pCtx.beginPath();
+                pCtx.arc(x, y, this.size * sizeMult * 0.5, 0, Math.PI * 2);
+                pCtx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            const cx = pWidth / 2, cy = pHeight / 2;
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const r = Math.sqrt(Math.random()) * CIRCLE_RADIUS;
+                const x = cx + Math.cos(angle) * r;
+                const y = cy + Math.sin(angle) * r;
+                const nx = (x - cx) / CIRCLE_RADIUS, ny = (y - cy) / CIRCLE_RADIUS;
+                let t = Math.max(0, Math.min(1, (nx + ny + 1.414) / 2.828));
+                let finalColor = t < 0.5 ? lerpColor(PALETTE[0], PALETTE[1], t * 2) : lerpColor(PALETTE[1], PALETTE[2], (t - 0.5) * 2);
+                particles.push(new Particle(x, y, `rgb(${finalColor.r},${finalColor.g},${finalColor.b})`, cx, cy));
+            }
+        }
+        initParticles();
+
+        function animateParticles() {
+            pCtx.clearRect(0, 0, pWidth, pHeight);
+            const time = Date.now() * 0.002;
+            for (let i = 0; i < particles.length; i++) {
+                if (particleProgress > 0) particles[i].update(time);
+                particles[i].draw(particleProgress);
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        const wrapRemove = document.getElementById('wrap-remove');
+        // Particle progress controlled by scroll
+
+
+        // ==========================================
+        // 04 Reveal Logic (Sticker)
+        // ==========================================
+        const wrapReveal = document.getElementById('wrap-reveal');
+        const demoSeal = document.getElementById('demoSeal');
+        const demoShadow = document.getElementById('demoShadow');
+        const demoCorner = document.getElementById('demoCorner');
+
+        let revealProgress = 0;
+        let revealTimer = null;
+
+        function updateReveal(p) {
+            const width = 160;
+            const peelX = width * (1 - p);
+            demoSeal.style.clipPath = `inset(0 ${width * p}px 0 0)`;
+
+            demoShadow.style.opacity = p > 0.02 ? '1' : '0';
+            demoShadow.style.left = `${peelX - 30}px`;
+
+            demoCorner.style.opacity = p > 0.02 ? '0' : '1';
+        }
+
+        // Reveal progress controlled by scroll
+
+        // ==========================================
+        // Advanced Interactions (Cursor, GNB, Scroll)
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            const cursor = document.querySelector('.cursor');
+            const gnb = document.getElementById('gnb');
+            const magneticBtns = document.querySelectorAll('.magnetic-btn');
+            const items = document.querySelectorAll('.metaphor-module');
+            const observerTargets = document.querySelectorAll('.observer-target');
+            const darkSection = document.getElementById('darkSection');
+
+            // 1. Custom Cursor & Magnetic Buttons
+            let mouseX = window.innerWidth / 2;
+            let mouseY = window.innerHeight / 2;
+            let cursorX = mouseX;
+            let cursorY = mouseY;
+
+            window.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+
+            function renderCursor() {
+                // Smooth follow
+                cursorX += (mouseX - cursorX) * 0.2;
+                cursorY += (mouseY - cursorY) * 0.2;
+                cursor.style.transform = `translate(${cursorX}px, ${cursorY}px) translate(-50%, -50%)`;
+                requestAnimationFrame(renderCursor);
+            }
+            requestAnimationFrame(renderCursor);
+
+            magneticBtns.forEach(btn => {
+                btn.addEventListener('mousemove', (e) => {
+                    // Only apply magnetic pull to nav or specific elements, 
+                    // disable it for CTA buttons to prevent them from moving out of place
+                    if (!btn.classList.contains('cta-btn')) {
+                        const rect = btn.getBoundingClientRect();
+                        const x = e.clientX - rect.left - rect.width / 2;
+                        const y = e.clientY - rect.top - rect.height / 2;
+
+                        btn.style.transform = `translate(${x * 0.3}px, ${y * 0.3}px)`;
+                    }
+                    cursor.classList.add('magnetic-active');
+                });
+
+                btn.addEventListener('mouseleave', () => {
+                    if (!btn.classList.contains('cta-btn')) {
+                        btn.style.transform = `translate(0px, 0px)`;
+                    }
+                    cursor.classList.remove('magnetic-active');
+                });
+            });
+
+            // 2. Fade-up Observer (Staggered Text & Modules)
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('in-view');
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: "0px 0px -10% 0px"
+            });
+
+            observerTargets.forEach(target => observer.observe(target));
+
+            // Typewriter effect initialization
+            const typeLines = [
+                document.getElementById('type-line-1'),
+                document.getElementById('type-line-2'),
+                document.getElementById('type-line-3'),
+                document.getElementById('type-line-4')
+            ];
+
+            const typeTexts = typeLines.map(el => {
+                if (!el) return "";
+                const t = el.textContent;
+                el.textContent = "";
+                return t;
+            });
+
+            let lineIndex = 0;
+
+            function playNextTypewriter() {
+                if (lineIndex < typeLines.length) {
+                    const line = typeLines[lineIndex];
+                    const fullText = typeTexts[lineIndex];
+                    if (line && fullText) {
+                        line.classList.add('typing-active');
+                        let charIndex = 0;
+
+                        const typingInterval = setInterval(() => {
+                            if (charIndex < fullText.length) {
+                                line.textContent += fullText.charAt(charIndex);
+                                charIndex++;
+                            } else {
+                                clearInterval(typingInterval);
+                                line.classList.remove('typing-active');
+                                line.classList.add('typing-done');
+                                lineIndex++;
+                                setTimeout(playNextTypewriter, 200); // short wait before next line
+                            }
+                        }, 40); // 40ms per char
+                    }
+                }
+            }
+
+            // Start typing animation immediately or with slight delay
+            setTimeout(playNextTypewriter, 800);
+
+            // 3. Advanced Scroll Logic
+            let lastScrollY = window.scrollY;
+
+            function onScroll() {
+                const currentScrollY = window.scrollY;
+                const windowHeight = window.innerHeight;
+
+                // GNB Hide/Show
+                if (currentScrollY > 50) {
+                    if (currentScrollY > lastScrollY) {
+                        // Scrolling down
+                        gnb.classList.add('hidden');
+                    } else {
+                        // Scrolling up
+                        gnb.classList.remove('hidden');
+                    }
+                }
+                lastScrollY = currentScrollY;
+
+                // Dark Mode & Background sequential text fade trigger
+                if (darkSection) {
+                    const darkRect = darkSection.getBoundingClientRect();
+                    const darkHeight = darkSection.offsetHeight;
+
+                    const horizSection = document.getElementById('horizontalSection');
+                    let darkTop = darkRect.top;
+                    let darkBottom = darkRect.bottom;
+                    if (horizSection) {
+                        const horizRect = horizSection.getBoundingClientRect();
+                        darkBottom = horizRect.bottom;
+                    }
+
+                    // Trigger dark mode when dark section is somewhat in viewport, and end when it's leaving
+                    if (darkTop < windowHeight * 0.4 && darkBottom > windowHeight * 0.6) {
+                        document.body.style.backgroundColor = '#111';
+                        document.body.style.color = '#fff';
+                    } else {
+                        document.body.style.backgroundColor = 'var(--bg-color)';
+                        document.body.style.color = 'var(--text-color)';
+                    }
+
+                    // Dark section progress (0 to 1)
+                    let dp = -darkRect.top / Math.max(1, darkHeight - windowHeight);
+
+                    let enterP = (windowHeight * 0.4 - darkRect.top) / (windowHeight * 0.4);
+                    enterP = Math.max(0, Math.min(1, enterP));
+                    dp = Math.max(0, Math.min(1, dp));
+
+                    const bgStatement = darkSection.querySelector('.bg-statement');
+                    const bgText = darkSection.querySelector('.bg-text');
+
+                    if (bgStatement && bgText) {
+                        // Title logic
+                        if (darkRect.top > 0) {
+                            // Fading in smoothly with scroll as it enters
+                            bgStatement.style.opacity = enterP;
+                            bgStatement.style.transform = `translateY(${30 - enterP * 30}px)`;
+                        } else if (dp < 0.85) {
+                            bgStatement.style.opacity = 1;
+                            bgStatement.style.transform = `translateY(0px)`;
+                        } else if (dp <= 0.98) {
+                            const subP = (dp - 0.85) / 0.13;
+                            bgStatement.style.opacity = 1 - subP;
+                            bgStatement.style.transform = `translateY(${-subP * 30}px)`;
+                        } else {
+                            bgStatement.style.opacity = 0;
+                            bgStatement.style.transform = `translateY(-30px)`;
+                        }
+
+                        // Text logic: Fades in slower than before
+                        if (dp < 0.1) {
+                            bgText.style.opacity = 0;
+                            bgText.style.transform = `translateY(30px)`;
+                        } else if (dp <= 0.35) {
+                            const subP = (dp - 0.1) / 0.25; // Slower fade in
+                            bgText.style.opacity = subP;
+                            bgText.style.transform = `translateY(${30 - subP * 30}px)`;
+                        } else if (dp < 0.85) {
+                            bgText.style.opacity = 1;
+                            bgText.style.transform = `translateY(0px)`;
+                        } else if (dp <= 0.98) {
+                            const subP = (dp - 0.85) / 0.13;
+                            bgText.style.opacity = 1 - subP;
+                            bgText.style.transform = `translateY(${-subP * 30}px)`;
+                        } else {
+                            bgText.style.opacity = 0;
+                            bgText.style.transform = `translateY(-30px)`;
+                        }
+                    }
+                }
+
+                // Horizontal Scroll Logic (Now starts moving as it enters)
+                const horizSection = document.getElementById('horizontalSection');
+                if (horizSection) {
+                    const hRect = horizSection.getBoundingClientRect();
+                    const hTrack = document.getElementById('hsTrack');
+
+                    if (hTrack) {
+                        const hScrollHeight = hRect.height - windowHeight;
+                        let hProgress = -hRect.top / hScrollHeight;
+                        hProgress = Math.max(0, Math.min(1, hProgress));
+
+                        const trackWidth = hTrack.scrollWidth;
+                        const END_PADDING = window.innerWidth * 0.25; // allow last card to move further left
+                        const maxTranslate = Math.max(0, trackWidth - window.innerWidth + (window.innerWidth * 0.08) + END_PADDING);
+
+                        // Sequential Horizontal Entry Logic:
+                        // hProgress 0.0 -> 0.05: Cards slide in from right (100vw -> 0)
+                        // hProgress 0.05 -> 1.0: Standard horizontal scrollThrough cards
+
+                        const initialOffset = window.innerWidth;
+
+                        let currentTranslate = 0;
+                        if (hRect.top <= 0 && hRect.bottom >= windowHeight) {
+                            // Make the initial entrance slower and smoother.
+                            const ENTRY_THRESHOLD = 0.20; // 20% of the horiz section progress
+                            if (hProgress < ENTRY_THRESHOLD) {
+                                const rawP = Math.max(0, Math.min(1, hProgress / ENTRY_THRESHOLD));
+                                // ease-out curve so movement starts slow then finishes
+                                const easedEntry = 1 - Math.pow(1 - rawP, 3);
+                                currentTranslate = initialOffset * (1 - easedEntry);
+                                hTrack.style.transform = `translateX(${currentTranslate}px)`;
+                            } else {
+                                const scrollP = (hProgress - ENTRY_THRESHOLD) / (1 - ENTRY_THRESHOLD);
+                                // apply gentle easing for horizontal scroll to slow movement
+                                const easedScroll = 1 - Math.pow(1 - scrollP, 2);
+                                currentTranslate = -maxTranslate * easedScroll;
+                                hTrack.style.transform = `translateX(${currentTranslate}px)`;
+                            }
+                        } else if (hRect.top > 0) {
+                            currentTranslate = initialOffset;
+                            hTrack.style.transform = `translateX(${initialOffset}px)`;
+                        } else if (hRect.bottom < windowHeight) {
+                            currentTranslate = -maxTranslate;
+                            hTrack.style.transform = `translateX(${-maxTranslate}px)`;
+                        }
+
+                        // 카드별 scale 효과
+                        const cards = hTrack.querySelectorAll('.hs-card');
+                        cards.forEach(card => {
+                            // 카드의 중앙 위치 계산
+                            const cardRect = card.getBoundingClientRect();
+                            const cardCenter = cardRect.left + cardRect.width / 2;
+                            const viewportCenter = window.innerWidth / 2;
+                            const dist = Math.abs(cardCenter - viewportCenter);
+                            // 중앙에 가까울수록 scale이 커짐 (최대 1.08, 최소 0.92)
+                            const maxScale = 1.08;
+                            const minScale = 0.92;
+                            const scaleRange = maxScale - minScale;
+                            // 0~1: 중앙에서 멀어질수록 1로 감
+                            const norm = Math.min(1, dist / (window.innerWidth * 0.35));
+                            const scale = maxScale - scaleRange * norm;
+                            card.style.transform = `scale(${scale})`;
+                            card.style.transition = 'transform 0.32s cubic-bezier(0.16,1,0.3,1)';
+                        });
+                    }
+                }
+
+                // Metaphor Effects (Early Trigger)
+                items.forEach((item, index) => {
+                    const rect = item.getBoundingClientRect();
+
+                    // User request: Scale animation keeps its timing, but metaphor (fold, scan) starts LATER.
+
+                    // Base progress for scaling (starts earlier)
+                    const scaleStartY = windowHeight * 0.6; // Scale starts when entering screen
+                    const scaleEndY = windowHeight * 0.1;
+                    let scaleP = 0;
+                    if (rect.top <= scaleStartY) { scaleP = (scaleStartY - rect.top) / (scaleStartY - scaleEndY); }
+                    scaleP = Math.max(0, Math.min(1, scaleP));
+                    const smoothScaleP = 1 - Math.pow(1 - scaleP, 3);
+
+                    // Base progress for specific metaphor interactions (Fold, Scan, etc) starts LATER.
+                    const effectStartY = windowHeight * 0.0; // Starts ONLY when it's much further up the screen
+                    const effectEndY = -windowHeight * 0.5;
+                    let effectP = 0;
+                    if (rect.top <= effectStartY) { effectP = (effectStartY - rect.top) / (effectStartY - effectEndY); }
+                    effectP = Math.max(0, Math.min(1, effectP));
+                    const smoothEffectP = 1 - Math.pow(1 - effectP, 3);
+
+                    // 1. Scale visual container (Uses earlier scaleP)
+                    const demoBox = item.querySelector('.demo-box');
+                    if (demoBox) {
+                        const scale = 0.6 + (smoothScaleP * 0.4);
+                        demoBox.style.transform = `scale(${scale})`;
+                    }
+
+                    // Text Fade-in/Fade-out cross-fade transition
+                    const moduleText = item.querySelector('.module-text');
+                    if (moduleText) {
+                        let fadeInP = 0;
+                        const inStart = windowHeight * 0.85;
+                        const inEnd = windowHeight * 0.35;
+                        if (rect.top <= inStart) {
+                            fadeInP = (inStart - rect.top) / (inStart - inEnd);
+                        }
+                        fadeInP = Math.max(0, Math.min(1, fadeInP));
+
+                        let fadeOutP = 0;
+                        const outStart = windowHeight * 0.75;
+                        const outEnd = windowHeight * 0.25;
+                        if (rect.bottom <= outStart) {
+                            fadeOutP = (outStart - rect.bottom) / (outStart - outEnd);
+                        }
+                        fadeOutP = Math.max(0, Math.min(1, fadeOutP));
+
+                        const opacity = fadeInP * (1 - fadeOutP);
+                        let textTranslateY = (1 - fadeInP) * 80 - fadeOutP * 80;
+
+                        moduleText.style.opacity = opacity;
+                        moduleText.style.transform = `translateY(${textTranslateY}px)`;
+                    }
+
+                    // 2. Specific Metaphor Interactions (Uses delayed effectP)
+                    if (item.id === 'wrap-fold') {
+                        const mid = item.querySelector('.middle-panel');
+                        const bot = item.querySelector('.bottom-panel');
+                        const shadows = item.querySelectorAll('.crease-shadow');
+                        if (mid) mid.style.transform = `rotateX(${178 * smoothEffectP}deg)`;
+                        if (bot) bot.style.transform = `rotateX(${-178 * smoothEffectP}deg)`;
+                        shadows.forEach(s => s.style.opacity = 0.7 * smoothEffectP);
+                    }
+
+                    if (item.id === 'wrap-scan') {
+                        const effect = item.querySelector('.effect-wrapper');
+                        const grain = item.querySelector('.grain-overlay');
+                        // Scan sweeps down early
+                        if (effect) effect.style.clipPath = `inset(0 0 ${100 - (100 * smoothEffectP)}% 0)`;
+                        if (grain) grain.style.opacity = 0.25 * smoothEffectP;
+                    }
+
+                    if (item.id === 'wrap-remove') {
+                        particleProgress = smoothEffectP;
+                        if (smoothEffectP === 0 && particles.length > 0 && particles[0].simAlpha < 1) {
+                            for (let i = 0; i < particles.length; i++) {
+                                particles[i].simX = particles[i].originX;
+                                particles[i].simY = particles[i].originY;
+                                particles[i].vx = 0; particles[i].vy = 0;
+                                particles[i].simAlpha = 1; particles[i].simSize = 1;
+                            }
+                        }
+                    }
+
+                    if (item.id === 'wrap-reveal') {
+                        if (typeof updateReveal === 'function') {
+                            updateReveal(smoothEffectP);
+                        }
+                    }
+                });
+            }
+
+            window.addEventListener('scroll', () => {
+                requestAnimationFrame(onScroll);
+            });
+
+            // Initial trigger
+            onScroll();
+        });
+    </script>
+
+</body>
+
+</html>
